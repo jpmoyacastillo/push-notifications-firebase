@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   ActionPerformed,
@@ -7,17 +7,13 @@ import {
   Token,
 } from '@capacitor/push-notifications';
 
-@Component({
-  selector: 'app-home',
-  templateUrl: 'home.page.html',
-  styleUrls: ['home.page.scss'],
+@Injectable({
+  providedIn: 'root',
 })
-export class HomePage implements OnInit {
+export class FcmService {
   constructor(private router: Router) {}
 
-  ngOnInit() {
-    console.log('Initializing HomePage');
-
+  public registerPush() {
     // Request permission to use push notifications
     // iOS will prompt user and return if they granted permission or not
     // Android will just grant without prompting
@@ -41,7 +37,7 @@ export class HomePage implements OnInit {
     PushNotifications.addListener(
       'pushNotificationReceived',
       (notification: PushNotificationSchema) => {
-        alert('Push received: ' + JSON.stringify(notification));
+        console.log('Push received: ' + JSON.stringify(notification));
       }
     );
 
