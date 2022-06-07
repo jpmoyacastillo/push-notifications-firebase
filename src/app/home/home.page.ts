@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ApplicationRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   ActionPerformed,
@@ -6,6 +6,7 @@ import {
   PushNotifications,
   Token,
 } from '@capacitor/push-notifications';
+import { FcmService } from '../services/fcm.service';
 
 @Component({
   selector: 'app-home',
@@ -13,47 +14,27 @@ import {
   styleUrls: ['home.page.scss'],
 })
 export class HomePage implements OnInit {
-  constructor(private router: Router) {}
+  mensajes: PushNotificationSchema[] = [];
 
-  ngOnInit() {
-    console.log('Initializing HomePage');
+  constructor(
+    public pushServive: FcmService,
+    private applicationRef: ApplicationRef
+  ) {}
 
-    // Request permission to use push notifications
-    // iOS will prompt user and return if they granted permission or not
-    // Android will just grant without prompting
-    PushNotifications.requestPermissions().then((result) => {
-      if (result.receive === 'granted') {
-        // Register with Apple / Google to receive push via APNS/FCM
-        PushNotifications.register();
-      } else {
-        // Show some error
-      }
+  async ngOnInit() {
+    this.pushServive.pushListener.subscribe((notification) => {
+      this.mensajes.unshift(notification);
+      this.applicationRef.tick();
     });
+  }
 
-    PushNotifications.addListener('registration', (token: Token) => {
-      console.log('Push registration success, token: ' + token.value);
-    });
+  async ionViewWillEnter() {
+    console.log('Will enter - Cargar mensajes');
+    this.mensajes = await this.pushServive.getMensajes();
+  }
 
-    PushNotifications.addListener('registrationError', (error: any) => {
-      console.log('Error on registration: ' + JSON.stringify(error));
-    });
-
-    PushNotifications.addListener(
-      'pushNotificationReceived',
-      (notification: PushNotificationSchema) => {
-        alert('Push received: ' + JSON.stringify(notification));
-      }
-    );
-
-    PushNotifications.addListener(
-      'pushNotificationActionPerformed',
-      async (notification: ActionPerformed) => {
-        const data = notification.notification.data;
-        console.log('Push action performed: ' + JSON.stringify(notification));
-        if (data.detailsId) {
-          this.router.navigateByUrl(`/home/${data.detailsId}`);
-        }
-      }
-    );
+  async borrarMensajes() {
+    await this.pushServive.borrarMensajes();
+    this.mensajes = [];
   }
 }
